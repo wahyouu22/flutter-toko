@@ -18,7 +18,6 @@ class DatabaseSeeder extends Seeder
             'email' => 'superadmin@gmail.com',
             'role' => '1',
             'status' => 1,
-            'hp' => '0812345678901',
             'password' => bcrypt('xxxxxx'),
         ]);
 
@@ -28,7 +27,6 @@ class DatabaseSeeder extends Seeder
         'email' => 'reyhansyah4@mail.com',
         'role' => '1',
         'status' => 1,
-        'hp' => '081234567892',
         'password' => bcrypt('xxxxxx'),
         ]);
 
@@ -37,7 +35,6 @@ class DatabaseSeeder extends Seeder
             'email' => 'reyuser@gmail.com',
             'role' => '2',
             'status' => 1,
-            'hp' => '08126374923',
             'password' => bcrypt('xxxxxx'),
             ]);
             # Data Kategori
@@ -56,5 +53,14 @@ class DatabaseSeeder extends Seeder
                 Kategori::create([
                 'nama_kategori' => 'Wingko',
             ]);
+        $this->call(CustomersTableSeeder::class);
+        $this->call(FailedJobsTableSeeder::class);
+        $this->call(FotoProdukTableSeeder::class);
+        $this->call(KategoriTableSeeder::class);
+        $this->call(MigrationsTableSeeder::class);
+        $this->call(PasswordResetTokensTableSeeder::class);
+        $this->call(PersonalAccessTokensTableSeeder::class);
+        $this->call(ProdukTableSeeder::class);
+        $this->call(UsersTableSeeder::class);
     }
 }

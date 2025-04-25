@@ -21,6 +21,7 @@ class CustomerController extends Controller
     public function callback()
     {
         try {
+            // Ambil data user dari Google
             $socialUser = Socialite::driver('google')->user();
 
             // Cek apakah email sudah terdaftar
@@ -34,15 +35,26 @@ class CustomerController extends Controller
                     'role'     => '2', // Role customer
                     'status'   => 1,   // Status aktif
                     'password' => Hash::make('default_password'), // Password default
-                    // (opsional) tambahkan field lain di sini jika dibutuhkan
+                    // Tambahkan kolom lainnya jika diperlukan
                 ]);
 
+                // Debug: dump user yang baru dibuat
+                dd($user);
+
                 // Buat data customer
-                Customer::create([
+                $customer = Customer::create([
                     'user_id'      => $user->id,
                     'google_id'    => $socialUser->id,
                     'google_token' => $socialUser->token,
+                    // Tambahkan kolom lain sesuai dengan kebutuhan
+                    'hp'           => null, // Misalnya hp tidak ada dari Google
+                    'alamat'       => null, // Misalnya alamat tidak ada dari Google
+                    'pos'          => null, // Misalnya pos tidak ada dari Google
+                    'foto'         => $socialUser->avatar, // Avatar dari Google
                 ]);
+
+                // Debug: dump customer yang baru dibuat
+                //dd($customer);
 
                 // Login pengguna baru
                 Auth::login($user);
@@ -52,10 +64,11 @@ class CustomerController extends Controller
             }
 
             // Redirect ke halaman utama
-            return redirect()->intended('beranda');
-
+            return redirect()->route('customer.dashboard');
         } catch (\Exception $e) {
-            // Redirect ke halaman utama jika terjadi kesalahan
+            // Debug: dump pesan error jika terjadi kesalahan
+            dd($e->getMessage());
+
             return redirect('/')->with('error', 'Terjadi kesalahan saat login dengan Google.');
         }
     }

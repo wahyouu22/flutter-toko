@@ -44,43 +44,7 @@
     @endphp
 
     <!-- HEADER -->
-    <header>
-        <div id="top-header">
-            <div class="container">
-                <div class="pull-left">
-                    <span>Selamat datang di Toko Online</span>
-                </div>
-            </div>
-        </div>
-
-        <div id="header">
-            <div class="container d-flex justify-content-between align-items-center">
-                <div class="header-logo">
-                    <a class="logo" href="{{ route('beranda') }}">
-                        <img src="{{ asset('image/logo.png') }}" alt="Logo">
-                    </a>
-                </div>
-                <ul class="header-btns d-flex list-unstyled mb-0">
-                    <li class="header-cart dropdown default-dropdown me-3">
-                        <a class="dropdown-toggle" data-toggle="dropdown" aria-expanded="true">
-                            <div class="header-btns-icon"><i class="fa fa-shopping-cart"></i></div>
-                            <strong class="text-uppercase">Keranjang</strong>
-                        </a>
-                    </li>
-                    <li class="header-account dropdown default-dropdown me-3">
-                        <div class="dropdown-toggle" data-toggle="dropdown" aria-expanded="true">
-                            <div class="header-btns-icon"><i class="fa fa-user-o"></i></div>
-                            <strong class="text-uppercase">Akun Saya <i class="fa fa-caret-down"></i></strong>
-                        </div>
-                        <a href="{{ route('auth.redirect') }}" class="text-uppercase">Login</a>
-                    </li>
-                    <li class="nav-toggle">
-                        <button class="nav-toggle-btn main-btn icon-btn"><i class="fa fa-bars"></i></button>
-                    </li>
-                </ul>
-            </div>
-        </div>
-    </header>
+        @include('v_layouts.header')
     <!-- /HEADER -->
 
     <!-- NAVIGATION -->
@@ -100,7 +64,7 @@
                     <ul class="menu-list d-flex list-unstyled mb-0">
                         <li><a href="{{ route('beranda') }}">Beranda</a></li>
                         <li><a href="{{ route('produk.all') }}">Produk</a></li>
-                        <li><a href="#">Tentang Kami</a></li>
+                        <li><a href="/">Tentang Kami</a></li>
                         <li><a href="#">Kontak</a></li>
                     </ul>
                 </div>
@@ -108,6 +72,7 @@
         </div>
     </div>
     <!-- /NAVIGATION -->
+
 
     <!-- BANNER -->
     @if (request()->segment(1) == '' || request()->segment(1) == 'beranda')

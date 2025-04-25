@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7c2c9775a8ec834ec6e13bfe20bcfa2e",
+    "content-hash": "c851fbdaefcb24840706fceafc491708",
     "packages": [
         {
             "name": "brick/math",
@@ -1507,16 +1507,16 @@
         },
         {
             "name": "laravel/socialite",
-            "version": "v5.19.0",
+            "version": "v5.20.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/socialite.git",
-                "reference": "c40f843c5643fb6b089e46ce9794b8408bf08319"
+                "reference": "30972c12a41f71abeb418bc9ff157da8d9231519"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/socialite/zipball/c40f843c5643fb6b089e46ce9794b8408bf08319",
-                "reference": "c40f843c5643fb6b089e46ce9794b8408bf08319",
+                "url": "https://api.github.com/repos/laravel/socialite/zipball/30972c12a41f71abeb418bc9ff157da8d9231519",
+                "reference": "30972c12a41f71abeb418bc9ff157da8d9231519",
                 "shasum": ""
             },
             "require": {
@@ -1575,7 +1575,7 @@
                 "issues": "https://github.com/laravel/socialite/issues",
                 "source": "https://github.com/laravel/socialite"
             },
-            "time": "2025-03-27T17:26:42+00:00"
+            "time": "2025-04-21T14:21:34+00:00"
         },
         {
             "name": "laravel/tinker",
@@ -2594,6 +2594,69 @@
                 }
             ],
             "time": "2023-02-08T01:06:31+00:00"
+        },
+        {
+            "name": "orangehill/iseed",
+            "version": "v3.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/orangehill/iseed.git",
+                "reference": "bfe8f5882641f70b309cd01e30f02e8e9d09b492"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/orangehill/iseed/zipball/bfe8f5882641f70b309cd01e30f02e8e9d09b492",
+                "reference": "bfe8f5882641f70b309cd01e30f02e8e9d09b492",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "~5.5.0|~5.6.0|~5.7.0|~5.8.0|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
+                "php": "^7.2|^8.0.2"
+            },
+            "require-dev": {
+                "illuminate/filesystem": "~5.5.0|~5.6.0|~5.7.0|~5.8.0|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
+                "laravel/framework": "~5.5.0|~5.6.0|~5.7.0|~5.8.0|^6.0|^7.0|^8.0|^9.0|^10.0|^11.0|^12.0",
+                "mockery/mockery": "^1.0.0",
+                "phpunit/phpunit": "^8.0|^11.5.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Orangehill\\Iseed\\IseedServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-0": {
+                    "Orangehill\\Iseed": "src/"
+                },
+                "classmap": [
+                    "src/Orangehill/Iseed/Exceptions.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "BSD-2-Clause"
+            ],
+            "authors": [
+                {
+                    "name": "Tihomir Opacic",
+                    "email": "tihomir.opacic@orangehilldev.com"
+                }
+            ],
+            "description": "Generate a new Laravel database seed file based on data from the existing database table.",
+            "keywords": [
+                "artisan",
+                "generators",
+                "laravel",
+                "seed"
+            ],
+            "support": {
+                "issues": "https://github.com/orangehill/iseed/issues",
+                "source": "https://github.com/orangehill/iseed/tree/v3.1.1"
+            },
+            "time": "2025-03-04T07:56:48+00:00"
         },
         {
             "name": "paragonie/constant_time_encoding",
