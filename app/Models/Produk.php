@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -8,25 +9,59 @@ class Produk extends Model
 {
     use HasFactory;
 
-    public $timestamps = true;
-    protected $table = "produk";
-    protected $guarded = ['id'];
+    // Menentukan nama tabel
+    protected $table = 'produk'; // Pastikan sesuai dengan nama tabel di database
 
+    // Menentukan kolom yang bisa diisi massal
+    protected $fillable = [
+        'kategori_id',
+        'user_id',
+        'status',
+        'nama_produk',  // Sesuaikan dengan kolom di database
+        'detail',       // Sebelumnya 'deskripsi'
+        'harga',
+        'stok',
+        'berat',
+        'foto'          // Sebelumnya 'gambar'
+    ];
+
+    /**
+     * Relasi ke Kategori
+     */
     public function kategori()
     {
-        return $this->belongsTo(Kategori::class);
+        return $this->belongsTo(Kategori::class, 'kategori_id'); // Menentukan foreign key jika diperlukan
     }
 
+    /**
+     * Relasi ke User
+     */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id'); // Menentukan foreign key jika diperlukan
     }
 
-    public function fotoProduk()
+    /**
+     * Relasi produk ke order items
+     */
+    public function orderItems()
     {
-        return $this->hasMany(FotoProduk::class, 'produk_id', 'id');
+        return $this->hasMany(OrderItem::class, 'produk_id'); // Pastikan foreign key sesuai
     }
 
-    // I've removed the redundant fotos() and gambar() relationships
-    // and kept only the fotoProduk() relationship to match your controller
+    /**
+     * Accessor untuk format harga
+     */
+    public function getFormattedHargaAttribute()
+    {
+        return 'Rp ' . number_format($this->harga, 0, ',', '.');
+    }
+
+    /**
+     * Scope untuk produk aktif
+     */
+    public function scopeAktif($query)
+    {
+        return $query->where('status', 1);
+    }
 }

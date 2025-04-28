@@ -3,84 +3,42 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class UsersTableSeeder extends Seeder
 {
-
     /**
-     * Auto generated seed file
+     * Run the database seeds.
      *
      * @return void
      */
     public function run()
-    {
-        
+{
+    // Disable foreign key checks temporarily
+    DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+    DB::table('users')->truncate();
+    DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        \DB::table('users')->delete();
-        
-        \DB::table('users')->insert(array (
-            0 => 
-            array (
-                'id' => 1,
-                'nama' => 'rhy0z Dz',
-                'email' => 'rhyfk0z@gmail.com',
-                'role' => '2',
-                'status' => 1,
-                'password' => '$2y$10$CZ5UurMeReDG0O/MegqPfOvWTscwY9W9mVnketPwL3YF4dJktbicS',
-                'foto' => NULL,
-                'created_at' => '2025-04-25 19:51:27',
-                'updated_at' => '2025-04-25 19:51:27',
-            ),
-            1 => 
-            array (
-                'id' => 2,
-                'nama' => 'Administrator',
-                'email' => 'superadmin@gmail.com',
-                'role' => '1',
-                'status' => 1,
-                'password' => '$2y$10$VLJ4nrsBHKLH4.jr39XTFe2vFmm5sLVeZW/GH9YRYYVRBoF2K29BC',
-                'foto' => NULL,
-                'created_at' => '2025-04-25 19:54:01',
-                'updated_at' => '2025-04-25 19:54:01',
-            ),
-            2 => 
-            array (
-                'id' => 3,
-                'nama' => 'rey admin',
-                'email' => 'reyhansyah4@mail.com',
-                'role' => '1',
-                'status' => 1,
-                'password' => '$2a$12$.8AW5WHUmUi2Lt5y9tUbuO/0ed0RKTK2B6TdXcXqGdychGdnY9A9q',
-                'foto' => NULL,
-                'created_at' => '2025-04-25 19:54:01',
-                'updated_at' => '2025-04-25 19:54:01',
-            ),
-            3 => 
-            array (
-                'id' => 4,
-                'nama' => 'reyuser',
-                'email' => 'reyuser@gmail.com',
-                'role' => '2',
-                'status' => 1,
-                'password' => '$2y$10$azoGBSqeioIxuWcaujvGO.mESq40EcQwjiNqnhYWbFFlXJ6ODEsfa',
-                'foto' => NULL,
-                'created_at' => '2025-04-25 19:54:01',
-                'updated_at' => '2025-04-25 19:54:01',
-            ),
-            4 => 
-            array (
-                'id' => 7,
-                'nama' => 'RHYru9 Reyhansyah',
-                'email' => 'reyhansyah4@gmail.com',
-                'role' => '2',
-                'status' => 1,
-                'password' => '$2a$12$FWPWskW6N3gUdFRBxD7.WOc3UyYRWP5UAyUPgEww/IaVrSSn2jGjm',
-                'foto' => NULL,
-                'created_at' => '2025-04-25 23:40:57',
-                'updated_at' => '2025-04-25 23:40:57',
-            ),
-        ));
-        
-        
+    $users = [
+        [
+            'id' => 1, // Explicit ID to reference in other tables
+            'nama' => 'Administrator',
+            'email' => 'superadmin@gmail.com',
+            'role' => 1,
+            'status' => 1,
+            'password' => Hash::make('password123'),
+            'hp' => '081234567890',
+            'email_verified_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ],
+        // Add other users with explicit IDs
+    ];
+
+    foreach ($users as $user) {
+        DB::table('users')->insert($user);
     }
+}
 }

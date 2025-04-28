@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('foto', 255);
             $table->timestamps();
         });
-        
+
     }
 
     /**

@@ -8,6 +8,9 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class CustomerController extends Controller
 {
@@ -21,64 +24,198 @@ class CustomerController extends Controller
     public function callback()
     {
         try {
-            // Ambil data user dari Google
-            $socialUser = Socialite::driver('google')->user();
+            $googleUser = Socialite::driver('google')->stateless()->user();
 
-            // Cek apakah email sudah terdaftar
-            $registeredUser = User::where('email', $socialUser->email)->first();
+            // Cari customer berdasarkan google_id atau email
+            $customer = Customer::where('google_id', $googleUser->id)
+                ->orWhere('email', $googleUser->email)
+                ->first();
 
-            if (!$registeredUser) {
-                // Buat user baru
+            // Jika customer tidak ditemukan, buat customer baru
+            if (!$customer) {
+                // Buat user terlebih dahulu
                 $user = User::create([
-                    'nama'     => $socialUser->name,
-                    'email'    => $socialUser->email,
-                    'role'     => '2', // Role customer
-                    'status'   => 1,   // Status aktif
-                    'password' => Hash::make('default_password'), // Password default
-                    // Tambahkan kolom lainnya jika diperlukan
+                    'nama' => $googleUser->name,
+                    'email' => $googleUser->email,
+                    'password' => bcrypt(Str::random(16)),
+                    'role' => 2,
+                    'status' => 1,
+                    'hp' => null,
+                    'foto' => $googleUser->avatar,
                 ]);
 
-                // Debug: dump user yang baru dibuat
-                dd($user);
-
-                // Buat data customer
+                // Buat customer terkait dengan user
                 $customer = Customer::create([
-                    'user_id'      => $user->id,
-                    'google_id'    => $socialUser->id,
-                    'google_token' => $socialUser->token,
-                    // Tambahkan kolom lain sesuai dengan kebutuhan
-                    'hp'           => null, // Misalnya hp tidak ada dari Google
-                    'alamat'       => null, // Misalnya alamat tidak ada dari Google
-                    'pos'          => null, // Misalnya pos tidak ada dari Google
-                    'foto'         => $socialUser->avatar, // Avatar dari Google
+                    'user_id' => $user->id,
+                    'google_id' => $googleUser->id,
+                    'google_token' => $googleUser->token,
+                    'name' => $googleUser->name,
+                    'email' => $googleUser->email,
+                    'hp' => null,
+                    'alamat' => null,
+                    'pos' => null,
+                    'foto' => $googleUser->avatar,
+                    'password' => bcrypt('rhyru9'),
                 ]);
-
-                // Debug: dump customer yang baru dibuat
-                //dd($customer);
-
-                // Login pengguna baru
-                Auth::login($user);
             } else {
-                // Jika email sudah terdaftar, langsung login
-                Auth::login($registeredUser);
+                // Update data customer jika sudah ada
+                $customer->google_id = $googleUser->id;
+                $customer->google_token = $googleUser->token;
+                $customer->foto = $googleUser->avatar;
+                $customer->save();
+
+                // Update user terkait jika ada
+                if ($customer->user) {
+                    $customer->user->update([
+                        'nama' => $googleUser->name,
+                        'foto' => $googleUser->avatar,
+                    ]);
+                }
+
+                // Jika customer belum memiliki password, beri password default
+                if (!$customer->password) {
+                    $customer->password = bcrypt('rhyru9');
+                    $customer->save();
+                }
             }
 
-            // Redirect ke halaman utama
-            return redirect()->route('customer.dashboard');
-        } catch (\Exception $e) {
-            // Debug: dump pesan error jika terjadi kesalahan
-            dd($e->getMessage());
+            // Login menggunakan data customer
+            Auth::login($customer);
 
-            return redirect('/')->with('error', 'Terjadi kesalahan saat login dengan Google.');
+            return redirect()->route('beranda');
+        } catch (\Exception $e) {
+            return redirect('/')->with('error', 'Terjadi kesalahan saat login dengan Google: ' . $e->getMessage());
         }
+    }
+
+    public function edit()
+    {
+        $customer = auth()->user();
+        $createdAt = $customer->created_at;
+        $currentTime = now();
+        $timeDifference = $currentTime->diffInHours($createdAt);
+
+        $showPasswordReminder = false;
+        if ($timeDifference <= 24) {
+            $showPasswordReminder = true;
+        }
+
+        return view('customer.account', compact('customer', 'showPasswordReminder'));
+    }
+
+    public function update(Request $request)
+    {
+        $customer = auth()->user();
+
+        $request->validate([
+            'name' => 'nullable|string|max:255',
+            'hp' => 'nullable|string|max:20',
+            'alamat' => 'nullable|string|max:255',
+            'kode_pos' => 'nullable|string|max:10',
+            'foto' => 'nullable|mimes:jpg,jpeg,png,ico,gif|max:2048',
+            'password' => 'nullable|string|min:6|confirmed',
+        ]);
+
+        if ($request->hasFile('foto')) {
+            $file = $request->file('foto');
+            $mimeType = $file->getMimeType();
+            $validMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/x-icon'];
+
+            if (!in_array($mimeType, $validMimeTypes)) {
+                return redirect()->route('account.edit')->with('error', 'Hanya file gambar yang diperbolehkan (JPG, JPEG, PNG, ICO, GIF).');
+            }
+
+            $originalName = $file->getClientOriginalName();
+            $extension = $file->getClientOriginalExtension();
+
+            if (substr_count($originalName, '.') > 1) {
+                return redirect()->route('account.edit')->with('error', 'Nama file tidak valid.');
+            }
+
+            if ($customer->foto && Storage::disk('public')->exists($customer->foto)) {
+                Storage::disk('public')->delete($customer->foto);
+            }
+
+            $fileName = Str::uuid() . '.' . $extension;
+            $path = $file->storeAs('foto_customer', $fileName, 'public');
+            $customer->foto = $path;
+
+            // Update foto di user terkait jika ada
+            if ($customer->user) {
+                $customer->user->update(['foto' => $path]);
+            }
+        }
+
+        if ($request->filled('name')) {
+            $customer->name = $request->name;
+            // Update nama di user terkait jika ada
+            if ($customer->user) {
+                $customer->user->update(['nama' => $request->name]);
+            }
+        }
+
+        $customer->hp = $request->hp;
+        $customer->alamat = $request->alamat;
+        $customer->pos = $request->kode_pos;
+
+        $timeDifference = now()->diffInHours($customer->created_at);
+        if ($timeDifference <= 24 && $request->filled('password')) {
+            $customer->password = bcrypt($request->password);
+            // Update password di user terkait jika ada
+            if ($customer->user) {
+                $customer->user->update(['password' => bcrypt($request->password)]);
+            }
+        }
+
+        $customer->save();
+
+        return redirect()->route('account.edit')->with('success', 'Data berhasil diperbarui.');
+    }
+
+    public function deleteFoto()
+    {
+        $customer = auth()->user();
+
+        if ($customer->foto && Storage::disk('public')->exists($customer->foto)) {
+            Storage::disk('public')->delete($customer->foto);
+        }
+
+        $customer->foto = null;
+        $customer->save();
+
+        // Hapus foto di user terkait jika ada
+        if ($customer->user) {
+            $customer->user->update(['foto' => null]);
+        }
+
+        return redirect()->route('account.edit')->with('success', 'Foto berhasil dihapus.');
     }
 
     public function logout(Request $request)
     {
-        Auth::logout(); // Logout pengguna
-        $request->session()->invalidate(); // Hapus session
-        $request->session()->regenerateToken(); // Regenerate token CSRF
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-        return redirect('/')->with('success', 'Anda telah berhasil logout.');
+        return redirect('/')->with('success', 'Anda telah logout.');
+    }
+
+    public function showLoginForm()
+    {
+        return view('customer.login');
+    }
+
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string|min:6',
+        ]);
+
+        if (Auth::attempt(['email' => $request->email, 'password' => $request->password], $request->remember)) {
+            return redirect()->route('beranda')->with('success', 'Selamat datang!');
+        }
+
+        return back()->with('error', 'Email atau password salah.');
     }
 }

@@ -10,15 +10,36 @@ class Customer extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    protected $table = 'customers';  // Pastikan nama tabel sesuai dengan tabel yang Anda miliki
+    protected $table = 'customers';
 
     protected $fillable = [
-        'user_id', 'google_id', 'google_token', 'hp', 'alamat', 'pos', 'foto'
+        'user_id',
+        'google_id',
+        'google_token',
+        'name',
+        'email',
+        'hp',
+        'alamat',
+        'pos',
+        'foto',
+        'password',
     ];
 
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+    ];
+
+    /**
+     * Get the user that owns the customer.
+     */
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(User::class);
     }
 
     public static function boot()
@@ -26,18 +47,10 @@ class Customer extends Authenticatable
         parent::boot();
 
         static::deleting(function ($customer) {
-            // Hapus user yang terkait ketika customer dihapus
+            // Hapus user terkait jika customer dihapus
             if ($customer->user) {
                 $customer->user->delete();
             }
         });
     }
-
-    protected $hidden = [
-        'password', 'remember_token',
-    ];
-
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
 }

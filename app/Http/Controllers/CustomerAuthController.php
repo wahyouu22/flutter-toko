@@ -34,7 +34,7 @@ class CustomerAuthController extends Controller
             // Periksa peran berdasarkan nilai role
             if ($user->role == 2) { // Peran customer (role == 2)
                 Auth::login($user);  // Gunakan Auth::login (lebih konsisten)
-                return redirect()->route('customer.dashboard');
+                return redirect()->route('beranda');
             } else {
                 return back()->withErrors(['email' => 'Email atau password salah, atau Anda bukan customer.']);
             }
