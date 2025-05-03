@@ -1,6 +1,7 @@
 # Sistem file macOS
 .DS_Store
 
+# Dependency
 vendor/
 node_modules/
 
@@ -14,3 +15,6 @@ node_modules/
 !public/**/*
 
 public/**/*.log
+
+!public/storage/
+!public/storage/**/*
