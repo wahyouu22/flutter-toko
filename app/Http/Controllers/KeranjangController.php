@@ -15,7 +15,7 @@ class KeranjangController extends Controller
     public function __construct()
     {
         $this->apiKey = env('RAJAONGKIR_API_KEY');
-        $this->baseUrl = 'https://api.rajaongkir.com/starter';
+        $this->baseUrl = env('RAJAONGKIR_BASE_URL');
     }
 
     public function index()
@@ -23,28 +23,22 @@ class KeranjangController extends Controller
         try {
             $cartItems = Cart::getContent();
             $isEmpty = Cart::isEmpty();
-
-            // Calculate total weight (convert kg to gram)
+            //hitung total berat dalam gram
             $totalWeight = $cartItems->sum(function($item) {
                 return ($item->attributes['berat'] ?? 0) * $item->quantity * 1000;
             });
 
-            // Get the validated session data first
             $validated = session('shipping_validated', []);
 
-            // Get all provinces for shipping form
             $provincesResponse = Http::withHeaders([
                 'key' => $this->apiKey
             ])->get("{$this->baseUrl}/province");
-
+            //ambil semua  response provinsi
             $provinces = [];
             if ($provincesResponse->successful()) {
                 $provinces = $provincesResponse->json()['rajaongkir']['results'];
-            } else {
-                session()->flash('error', 'Gagal memuat data provinsi. Silakan coba lagi.');
             }
 
-            // Get all cities for origin selection
             $citiesResponse = Http::withHeaders([
                 'key' => $this->apiKey
             ])->get("{$this->baseUrl}/city");
@@ -52,8 +46,6 @@ class KeranjangController extends Controller
             $cities = [];
             if ($citiesResponse->successful()) {
                 $cities = $citiesResponse->json()['rajaongkir']['results'];
-            } else {
-                session()->flash('error', 'Gagal memuat data kota. Silakan coba lagi.');
             }
 
             $couriers = [
@@ -77,7 +69,6 @@ class KeranjangController extends Controller
                 'validated' => $validated
             ]);
         } catch (\Exception $e) {
-            report($e);
             return view('keranjang.index', [
                 'cartItems' => collect(),
                 'isEmpty' => true,
@@ -115,29 +106,31 @@ class KeranjangController extends Controller
             'courier' => $validated['courier']
         ]);
 
-        $result = [];
-        $shippingCost = 0;
-
         if ($response->successful()) {
             $result = $response->json()['rajaongkir'];
+            $shippingCost = 0;
 
-            // Get the cheapest shipping option
             if (!empty($result['results'][0]['costs'])) {
                 $cheapest = collect($result['results'][0]['costs'])->sortBy('cost.0.value')->first();
                 $shippingCost = $cheapest['cost'][0]['value'] ?? 0;
             }
-        } else {
-            return back()->with('error', 'Gagal menghitung ongkos kirim. Silakan coba lagi.');
+
+            session([
+                'shipping_result' => $result,
+                'shipping_cost' => $shippingCost,
+                'shipping_validated' => $validated
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'result' => $result
+            ]);
         }
 
-        // Store shipping data in session
-        session([
-            'shipping_result' => $result,
-            'shipping_cost' => $shippingCost,
-            'shipping_validated' => $validated
-        ]);
-
-        return redirect()->route('keranjang.index');
+        return response()->json([
+            'success' => false,
+            'message' => 'Gagal menghitung ongkos kirim. Silakan coba lagi.'
+        ], 400);
     }
 
     public function getCities($provinceId)
@@ -148,11 +141,9 @@ class KeranjangController extends Controller
             'province' => $provinceId
         ]);
 
-        if ($response->successful()) {
-            return response()->json($response->json()['rajaongkir']['results']);
-        }
-
-        return response()->json([]);
+        return $response->successful()
+            ? response()->json($response->json()['rajaongkir']['results'])
+            : response()->json([]);
     }
 
     public function add(Request $request)
@@ -164,22 +155,15 @@ class KeranjangController extends Controller
 
         $produk = Produk::findOrFail($validated['produk_id']);
 
-        // Cek stok tersedia
         if ($produk->stok < $validated['quantity']) {
-            return back()
-                ->withInput()
-                ->with('error', 'Stok tidak mencukupi! Stok tersedia: '.$produk->stok);
+            return back()->with('error', 'Stok tidak mencukupi! Stok tersedia: '.$produk->stok);
         }
 
-        // Cek apakah produk sudah ada di keranjang
         $existingItem = Cart::get($produk->id);
         $newQuantity = $existingItem ? $existingItem->quantity + $validated['quantity'] : $validated['quantity'];
 
-        // Validasi ulang stok dengan quantity baru
         if ($produk->stok < $newQuantity) {
-            return back()
-                ->withInput()
-                ->with('error', 'Stok tidak mencukupi untuk jumlah yang diminta! Stok tersedia: '.$produk->stok);
+            return back()->with('error', 'Stok tidak mencukupi untuk jumlah yang diminta! Stok tersedia: '.$produk->stok);
         }
 
         Cart::add([
@@ -196,66 +180,74 @@ class KeranjangController extends Controller
             'associatedModel' => $produk
         ]);
 
-        return redirect()
-            ->route('keranjang.index')
-            ->with('success', 'Produk berhasil ditambahkan ke keranjang');
+        return redirect()->route('keranjang.index')->with('success', 'Produk berhasil ditambahkan ke keranjang');
     }
 
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'id' => 'required',
             'quantity' => 'required|integer|min:1'
         ]);
 
-        $item = Cart::get($validated['id']);
+        $item = Cart::get($id);
 
         if (!$item) {
-            return back()->with('error', 'Item tidak ditemukan dalam keranjang');
+            return response()->json([
+                'success' => false,
+                'message' => 'Item tidak ditemukan dalam keranjang'
+            ], 404);
         }
 
-        // Cek stok tersedia
         if ($item->attributes['stok'] < $validated['quantity']) {
-            return back()
-                ->withInput()
-                ->with('error', 'Stok tidak mencukupi! Stok tersedia: '.$item->attributes['stok']);
+            return response()->json([
+                'success' => false,
+                'message' => 'Stok tidak mencukupi! Stok tersedia: '.$item->attributes['stok']
+            ], 400);
         }
 
-        Cart::update($validated['id'], [
+        Cart::update($id, [
             'quantity' => [
                 'relative' => false,
                 'value' => $validated['quantity']
             ]
         ]);
 
-        return redirect()
-            ->route('keranjang.index')
-            ->with('success', 'Keranjang berhasil diperbarui');
+        $updatedItem = Cart::get($id);
+        $totalWeight = Cart::getContent()->sum(function($item) {
+            return ($item->attributes['berat'] ?? 0) * $item->quantity * 1000;
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Keranjang berhasil diperbarui',
+            'quantity' => $validated['quantity'],
+            'item_price' => $updatedItem->price,
+            'subTotal' => Cart::getSubTotal(),
+            'totalWeight' => $totalWeight
+        ]);
     }
 
-    public function remove(Request $request)
+    public function remove(Request $request, $id)
     {
-        $validated = $request->validate(['id' => 'required']);
-
-        if (!Cart::get($validated['id'])) {
+        if (!Cart::get($id)) {
             return back()->with('error', 'Item tidak ditemukan dalam keranjang');
         }
 
-        Cart::remove($validated['id']);
-
-        return redirect()
-            ->route('keranjang.index')
-            ->with('success', 'Produk berhasil dihapus dari keranjang');
+        Cart::remove($id);
+        return redirect()->route('keranjang.index')->with('success', 'Produk berhasil dihapus dari keranjang');
     }
 
     public function clear()
     {
         Cart::clear();
-        // Also clear shipping data
         session()->forget(['shipping_result', 'shipping_cost', 'shipping_validated']);
+        return redirect()->route('keranjang.index')->with('success', 'Keranjang berhasil dikosongkan');
+    }
 
-        return redirect()
-            ->route('keranjang.index')
-            ->with('success', 'Keranjang berhasil dikosongkan');
+    public function count()
+    {
+        return response()->json([
+            'count' => Cart::getTotalQuantity()
+        ]);
     }
 }

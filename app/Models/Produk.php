@@ -9,57 +9,40 @@ class Produk extends Model
 {
     use HasFactory;
 
-    // Menentukan nama tabel
-    protected $table = 'produk'; // Pastikan sesuai dengan nama tabel di database
+    protected $table = 'produk';
 
-    // Menentukan kolom yang bisa diisi massal
     protected $fillable = [
         'kategori_id',
         'user_id',
         'status',
-        'nama_produk',  // Sesuaikan dengan kolom di database
-        'detail',       // Sebelumnya 'deskripsi'
+        'nama_produk',
+        'detail',
         'harga',
         'stok',
         'berat',
-        'foto'          // Sebelumnya 'gambar'
+        'foto'
     ];
 
-    /**
-     * Relasi ke Kategori
-     */
     public function kategori()
     {
-        return $this->belongsTo(Kategori::class, 'kategori_id'); // Menentukan foreign key jika diperlukan
+        return $this->belongsTo(Kategori::class, 'kategori_id');
     }
 
-    /**
-     * Relasi ke User
-     */
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_id'); // Menentukan foreign key jika diperlukan
+        return $this->belongsTo(User::class, 'user_id');
     }
 
-    /**
-     * Relasi produk ke order items
-     */
     public function orderItems()
     {
-        return $this->hasMany(OrderItem::class, 'produk_id'); // Pastikan foreign key sesuai
+        return $this->hasMany(OrderItem::class, 'produk_id');
     }
 
-    /**
-     * Accessor untuk format harga
-     */
     public function getFormattedHargaAttribute()
     {
         return 'Rp ' . number_format($this->harga, 0, ',', '.');
     }
 
-    /**
-     * Scope untuk produk aktif
-     */
     public function scopeAktif($query)
     {
         return $query->where('status', 1);

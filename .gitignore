@@ -1,6 +1,16 @@
+# Sistem file macOS
 .DS_Store
+
 vendor/
 node_modules/
-.env
-*.log
 
+.env
+
+*.log
+/storage/**/*.log
+/public/**/*.log
+
+!public/
+!public/**/*
+
+public/**/*.log

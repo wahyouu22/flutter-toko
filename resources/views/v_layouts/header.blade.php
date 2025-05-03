@@ -46,7 +46,7 @@
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="accountDropdown">
                         @auth
                             <li><a class="dropdown-item" href="{{ route('account.edit') }}"><i class="fa fa-user-o me-2"></i> Akun Saya</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fa fa-check me-2"></i> History</a></li>
+                            <li><a class="dropdown-item" href="{{ route('history.index') }}"><i class="fa fa-check me-2"></i> History</a></li>
                             <li>
                                 <a class="dropdown-item" href="{{ route('customer.logout') }}"
                                    onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
@@ -89,7 +89,7 @@
                 <li><a href="{{ route('keranjang.index') }}" class="nav-link">Keranjang</a></li>
                 @auth
                     <li><a href="{{ route('account.edit') }}" class="nav-link">Akun Saya</a></li>
-                    <li><a href="#" class="nav-link">History</a></li>
+                    <li><a href="{{ route('history.index') }}" class="nav-link">History</a></li>
                     <li>
                         <a href="{{ route('customer.logout') }}" class="nav-link"
                            onclick="event.preventDefault(); document.getElementById('logout-form-mobile').submit();">

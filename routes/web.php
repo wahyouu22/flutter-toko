@@ -15,8 +15,10 @@ use App\Http\Controllers\OngkirController;
 use App\Http\Controllers\OngkirProController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\HistoryController;
-use App\Http\Controllers\PaymentController; // Added missing controller
-use App\Http\Controllers\ReviewController; // Added missing controller
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ReviewController;
+
 
 Route::get('/', function () {
     return redirect()->route('beranda');
@@ -45,10 +47,10 @@ Route::post('/kontak', [KontakController::class, 'store'])->name('kontak.store')
 Route::prefix('keranjang')->group(function () {
     Route::get('/', [KeranjangController::class, 'index'])->name('keranjang.index');
     Route::post('/add', [KeranjangController::class, 'add'])->name('keranjang.add');
-    Route::put('/update', [KeranjangController::class, 'update'])->name('keranjang.update');
-    Route::delete('/remove', [KeranjangController::class, 'remove'])->name('keranjang.remove');
+    Route::put('/update/{id}', [KeranjangController::class, 'update'])->name('keranjang.update'); // Tambah parameter {id}
+    Route::delete('/remove/{id}', [KeranjangController::class, 'remove'])->name('keranjang.remove'); // Juga untuk remove
     Route::post('/clear', [KeranjangController::class, 'clear'])->name('keranjang.clear');
-    Route::get('/count', [KeranjangController::class, 'count'])->name('keranjang.count'); // Added missing route
+    Route::get('/count', [KeranjangController::class, 'count'])->name('keranjang.count');
 });
 
 // ================= BACKEND ROUTES (Admin) =================
@@ -128,14 +130,21 @@ Route::post('/ongkir/clear', [OngkirController::class, 'clearShipping'])->name('
 
 // ============================== END RAJA ONGKIR=================================///
 
-// Order routes
+// ============================== HISTORY =============================///
+Route::prefix('history')->middleware(['auth'])->group(function () {
+    Route::get('/', [HistoryController::class, 'index'])->name('history.index');
+    Route::get('/{order}', [HistoryController::class, 'show'])->name('history.show');
+    Route::get('/{order}/edit', [HistoryController::class, 'edit'])->name('history.edit');
+    Route::put('/{order}', [HistoryController::class, 'update'])->name('history.update');
+    Route::post('/{order}/pay', [HistoryController::class, 'pay'])->name('history.pay');
+    Route::get('/{order}/invoice', [HistoryController::class, 'invoice'])->name('history.invoice');
+    Route::get('/{order}/invoice-pdf', [HistoryController::class, 'invoicePdf'])->name('history.invoice.pdf');
+});
+
+// Rute untuk checkout dan order
 Route::middleware(['auth'])->group(function () {
     Route::post('/checkout', [OrderController::class, 'checkout'])->name('checkout');
     Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
-    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index'); // Added name
-    Route::post('/order/complete', [OrderController::class, 'completeOrder'])->name('order.complete');
-    Route::get('/order/track', [OrderController::class, 'trackOrder'])->name('order.track'); // Added
-    Route::post('/order/cancel/{id}', [OrderController::class, 'cancelOrder'])->name('order.cancel'); // Added
 });
 
 // Payment routes - Added new group
@@ -147,6 +156,7 @@ Route::prefix('payments')->middleware('auth')->group(function () {
 });
 
 // History Routes
+Route::get('/invoice/{invoiceId}', [InvoiceController::class, 'showInvoice'])->name('invoice.show');
 Route::middleware(['auth'])->group(function () {
     Route::get('/history', [HistoryController::class, 'index'])->name('history.index');
     Route::get('/history/{id}', [HistoryController::class, 'show'])->name('history.show');
@@ -155,6 +165,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/history/{id}/invoice/download', [HistoryController::class, 'downloadInvoice'])->name('history.invoice.download');
     Route::post('/history/{id}/pay', [HistoryController::class, 'processPayment'])->name('history.payment');
 });
+
 
 // Review Routes - Added new group
 Route::middleware(['auth'])->prefix('reviews')->group(function () {

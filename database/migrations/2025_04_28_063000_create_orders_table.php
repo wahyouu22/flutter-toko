@@ -20,6 +20,11 @@ return new class extends Migration
             $table->string('shipping_etd');
             $table->string('destination_city');
             $table->string('status')->default('pending');
+            $table->string('resi')->nullable();
+            $table->text('address')->nullable();
+            $table->string('pos_code', 10)->nullable();
+            $table->string('phone', 20)->nullable();
+            $table->string('foto_resi')->nullable(); // <--- Tambahan baru
             $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

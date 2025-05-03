@@ -6,8 +6,14 @@ use Illuminate\Support\Facades\Http;
 
 class OngkirController extends Controller
 {
-    private $apiKey = '739f0fb277b8be3c8eb812b552467ea0'; // Ganti dengan API key Anda
-    private $baseUrl = 'https://api.rajaongkir.com/starter';
+    private $apiKey;
+    private $baseUrl;
+
+    public function __construct()
+    {
+        $this->apiKey = env('RAJAONGKIR_API_KEY');
+        $this->baseUrl = env('RAJAONGKIR_BASE_URL');
+    }
 
     public function index()
     {

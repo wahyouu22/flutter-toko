@@ -47,20 +47,18 @@
                                         </td>
                                         <td class="align-middle">Rp. {{ number_format($item->price, 0, ',', '.') }}</td>
                                         <td class="align-middle">
-                                            <form action="{{ route('keranjang.update', $item->id) }}" method="POST"
-                                                class="d-flex">
+                                            <form action="{{ route('keranjang.update', $item->id) }}" method="POST" class="d-flex update-quantity-form">
                                                 @csrf
                                                 @method('PUT')
                                                 <input type="number" name="quantity" value="{{ $item->quantity }}"
                                                     min="1" max="{{ $item->attributes['stok'] ?? 1 }}"
-                                                    class="form-control me-2" style="width: 80px;">
-                                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                    class="form-control me-2 quantity-input" style="width: 80px;">
+                                                <button type="submit" class="btn btn-sm btn-outline-primary update-btn">
                                                     <i class="fas fa-sync-alt"></i>
                                                 </button>
                                             </form>
                                         </td>
-                                        <td class="align-middle">Rp.
-                                            {{ number_format($item->price * $item->quantity, 0, ',', '.') }}</td>
+                                        <td class="align-middle item-total">Rp. {{ number_format($item->price * $item->quantity, 0, ',', '.') }}</td>
                                         <td class="align-middle">
                                             <form action="{{ route('keranjang.remove', $item->id) }}" method="POST">
                                                 @csrf
@@ -77,12 +75,11 @@
                             <tfoot class="table-light">
                                 <tr>
                                     <td colspan="3" class="text-end"><strong>Total Belanja:</strong></td>
-                                    <td colspan="2"><strong>Rp. {{ number_format($subTotal, 0, ',', '.') }}</strong>
-                                    </td>
+                                    <td colspan="2" class="subtotal-display"><strong>Rp. {{ number_format($subTotal, 0, ',', '.') }}</strong></td>
                                 </tr>
                                 <tr>
                                     <td colspan="3" class="text-end"><strong>Total Berat:</strong></td>
-                                    <td colspan="2"><strong>{{ $totalWeight }} Gram</strong></td>
+                                    <td colspan="2" class="total-weight-display"><strong>{{ $totalWeight }} Gram</strong></td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -103,7 +100,7 @@
                                             <option value="">Pilih Kota Asal</option>
                                             @foreach ($cities as $city)
                                                 <option value="{{ $city['city_id'] }}"
-                                                    {{ old('origin') == $city['city_id'] ? 'selected' : '' }}>
+                                                    {{ old('origin', $validated['origin'] ?? '') == $city['city_id'] ? 'selected' : '' }}>
                                                     {{ $city['type'] }} {{ $city['city_name'] }}
                                                     ({{ $city['province'] }})
                                                 </option>
@@ -121,7 +118,7 @@
                                             <option value="">Pilih Provinsi</option>
                                             @foreach ($provinces as $province)
                                                 <option value="{{ $province['province_id'] }}"
-                                                    {{ old('destination_province') == $province['province_id'] ? 'selected' : '' }}>
+                                                    {{ old('destination_province', $validated['destination_province'] ?? '') == $province['province_id'] ? 'selected' : '' }}>
                                                     {{ $province['province'] }}
                                                 </option>
                                             @endforeach
@@ -132,11 +129,11 @@
 
                                         <label for="destination" class="form-label mt-2">Kota Tujuan</label>
                                         <select class="form-select" id="destination" name="destination" required>
-                                            <option value="">Pilih Provinsi Terlebih Dahulu</option>
-                                            @if (old('destination_province'))
-                                                @foreach ($cities->where('province_id', old('destination_province')) as $city)
+                                            <option value="">Pilih Kota</option>
+                                            @if (isset($validated['destination_province']))
+                                                @foreach ($cities->where('province_id', $validated['destination_province']) as $city)
                                                     <option value="{{ $city['city_id'] }}"
-                                                        {{ old('destination') == $city['city_id'] ? 'selected' : '' }}>
+                                                        {{ old('destination', $validated['destination'] ?? '') == $city['city_id'] ? 'selected' : '' }}>
                                                         {{ $city['type'] }} {{ $city['city_name'] }}
                                                     </option>
                                                 @endforeach
@@ -161,7 +158,7 @@
                                             <option value="">Pilih Kurir</option>
                                             @foreach ($couriers as $key => $courier)
                                                 <option value="{{ $key }}"
-                                                    {{ old('courier') == $key ? 'selected' : '' }}>
+                                                    {{ old('courier', $validated['courier'] ?? '') == $key ? 'selected' : '' }}>
                                                     {{ $courier }}
                                                 </option>
                                             @endforeach
@@ -198,16 +195,14 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @if (isset($result))
-                                            @foreach ($result['results'] as $courier)
+                                        @if (isset($shippingResult))
+                                            @foreach ($shippingResult['results'] as $courier)
                                                 @foreach ($courier['costs'] as $service)
                                                     <tr>
                                                         <td>{{ $courier['name'] }}</td>
                                                         <td>{{ $service['service'] }}</td>
                                                         <td>{{ $service['description'] }}</td>
-                                                        <td>Rp
-                                                            {{ number_format($service['cost'][0]['value'], 0, ',', '.') }}
-                                                        </td>
+                                                        <td>Rp {{ number_format($service['cost'][0]['value'], 0, ',', '.') }}</td>
                                                         <td>{{ str_replace(' HARI', '', $service['cost'][0]['etd']) }}</td>
                                                         <td>
                                                             <button class="btn btn-primary btn-sm select-shipping-service"
@@ -223,8 +218,7 @@
                                             @endforeach
                                         @else
                                             <tr>
-                                                <td colspan="6" class="text-center">Silakan hitung ongkos kirim
-                                                    terlebih dahulu.</td>
+                                                <td colspan="6" class="text-center">Silakan hitung ongkos kirim terlebih dahulu.</td>
                                             </tr>
                                         @endif
                                     </tbody>
@@ -293,7 +287,7 @@
 
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Total Harga:</span>
-                                    <span>Rp {{ number_format($subTotal, 0, ',', '.') }}</span>
+                                    <span class="subtotal-summary">Rp {{ number_format($subTotal, 0, ',', '.') }}</span>
                                 </div>
 
                                 <div class="d-flex justify-content-between mb-2 shipping-cost-row"
@@ -315,17 +309,31 @@
                                     </span>
                                 </div>
 
-                                <!-- Hidden fields untuk data ongkir -->
+                                <!-- Hidden fields untuk data yang akan dipost ke checkout -->
                                 <input type="hidden" name="shipping_cost" value="{{ $shippingCost ?? '' }}">
-                                <input type="hidden" name="shipping_service" value="{{ $shippingService ?? '' }}">
-                                <input type="hidden" name="shipping_etd" value="{{ $shippingEtd ?? '' }}">
-                                <input type="hidden" name="destination_city" value="{{ $destinationCity ?? '' }}">
+                                <input type="hidden" name="shipping_service" value="{{ $validated['courier'] ?? '' }}">
+                                <input type="hidden" name="shipping_etd" value="{{ $shippingResult['results'][0]['costs'][0]['cost'][0]['etd'] ?? '' }}">
+                                <input type="hidden" name="destination_city" value="{{ $validated['destination'] ?? '' }}">
+                                <input type="hidden" name="total_weight" value="{{ $totalWeight }}">
+                                <input type="hidden" name="total_quantity" value="{{ $totalQuantity }}">
+                                <input type="hidden" name="total_payment" value="{{ $subTotal + ($shippingCost ?? 0) }}">
+
+                                <!-- Hidden field untuk daftar produk -->
+                                <input type="hidden" name="products" value="{{ json_encode($cartItems->map(function($item) {
+                                    return [
+                                        'id' => $item->id,
+                                        'name' => $item->name,
+                                        'price' => $item->price,
+                                        'quantity' => $item->quantity,
+                                        'weight' => ($item->attributes['berat'] ?? 0) * 1000,
+                                        'image' => $item->attributes['foto'] ?? null
+                                    ];
+                                })) }}">
 
                                 <button type="submit" class="btn btn-primary w-100 mt-3" id="checkout-btn"
-    {{ (isset($shippingCost) && auth()->check()) ? '' : 'disabled' }}>
-    <i class="fas fa-credit-card me-2"></i> Proses Checkout
-</button>
-
+                                    {{ (isset($shippingCost) && auth()->check()) ? '' : 'disabled' }}>
+                                    <i class="fas fa-credit-card me-2"></i> Proses Checkout
+                                </button>
                             </form>
                         </div>
                     </div>
@@ -375,7 +383,7 @@
                 // Show loading state
                 $submitBtn.prop('disabled', true).html(
                     '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Menghitung...'
-                    );
+                );
                 $tableBody.html('<tr><td colspan="6" class="text-center">Memproses data...</td></tr>');
 
                 $.ajax({
@@ -389,7 +397,7 @@
                         if (!response || !response.result) {
                             $tableBody.append(
                                 '<tr><td colspan="6" class="text-center text-danger">Format respons tidak valid</td></tr>'
-                                );
+                            );
                             return;
                         }
 
@@ -398,7 +406,7 @@
                         if (!result.results || result.results.length === 0) {
                             $tableBody.append(
                                 '<tr><td colspan="6" class="text-center">Tidak ada layanan pengiriman yang tersedia</td></tr>'
-                                );
+                            );
                             return;
                         }
 
@@ -406,8 +414,7 @@
                             if (!courier.costs || courier.costs.length === 0) return;
 
                             $.each(courier.costs, function(i, service) {
-                                if (!service.cost || service.cost.length === 0)
-                                    return;
+                                if (!service.cost || service.cost.length === 0) return;
 
                                 const cost = service.cost[0];
                                 const serviceName = service.service;
@@ -417,21 +424,21 @@
 
                                 $tableBody.append(
                                     `<tr>
-                                <td>${courier.name}</td>
-                                <td>${serviceName}</td>
-                                <td>${description}</td>
-                                <td>Rp ${value.toLocaleString('id-ID')}</td>
-                                <td>${etd}</td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm select-shipping-service"
-                                            data-cost="${value}"
-                                            data-service="${serviceName}"
-                                            data-courier="${courier.name}"
-                                            data-etd="${etd}">
-                                        <i class="fas fa-check me-1"></i> Pilih
-                                    </button>
-                                </td>
-                            </tr>`
+                                        <td>${courier.name}</td>
+                                        <td>${serviceName}</td>
+                                        <td>${description}</td>
+                                        <td>Rp ${value.toLocaleString('id-ID')}</td>
+                                        <td>${etd}</td>
+                                        <td>
+                                            <button class="btn btn-primary btn-sm select-shipping-service"
+                                                    data-cost="${value}"
+                                                    data-service="${serviceName}"
+                                                    data-courier="${courier.name}"
+                                                    data-etd="${etd}">
+                                                <i class="fas fa-check me-1"></i> Pilih
+                                            </button>
+                                        </td>
+                                    </tr>`
                                 );
                             });
                         });
@@ -443,13 +450,81 @@
                         }
                         $tableBody.empty().append(
                             `<tr><td colspan="6" class="text-center text-danger">${errorMessage}</td></tr>`
-                            );
+                        );
                     },
                     complete: function() {
                         $submitBtn.prop('disabled', false).html(
                             '<i class="fas fa-calculator me-2"></i> Hitung Ongkos Kirim');
                     }
                 });
+            });
+
+            // Handle quantity update with AJAX
+            $(document).on('submit', '.update-quantity-form', function(e) {
+                e.preventDefault();
+
+                const form = $(this);
+                const button = form.find('.update-btn');
+                const originalButtonHtml = button.html();
+                const itemRow = form.closest('tr');
+                const itemId = form.attr('action').split('/').pop();
+
+                // Show loading state
+                button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
+
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'POST',
+                    data: form.serialize(),
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            // Update the displayed price and total
+                            itemRow.find('.item-total').text('Rp. ' + (response.item_price * response.quantity).toLocaleString('id-ID'));
+
+                            // Update subtotal, total weight, and total quantity in the footer
+                            $('.subtotal-display').html('<strong>Rp. ' + response.subTotal.toLocaleString('id-ID') + '</strong>');
+                            $('.total-weight-display').html('<strong>' + response.totalWeight + ' Gram</strong>');
+                            $('.total-quantity-display').html('<strong>' + response.totalQuantity + ' Item</strong>');
+
+                            // Update the weight input if shipping calculation exists
+                            $('#weight').val(response.totalWeight);
+
+                            // Update the summary section
+                            const shippingCost = parseFloat($('#checkout-form input[name="shipping_cost"]').val()) || 0;
+                            $('.subtotal-summary').text('Rp ' + response.subTotal.toLocaleString('id-ID'));
+                            $('.total-payment').text('Rp ' + (response.subTotal + shippingCost).toLocaleString('id-ID'));
+
+                            // Update hidden fields in checkout form
+                            $('#checkout-form input[name="total_weight"]').val(response.totalWeight);
+                            $('#checkout-form input[name="total_quantity"]').val(response.totalQuantity);
+                            $('#checkout-form input[name="total_payment"]').val(response.subTotal + shippingCost);
+
+                            showToast('Jumlah produk berhasil diperbarui');
+                        } else {
+                            showToast(response.message, 'error');
+                            form.find('.quantity-input').val(form.find('.quantity-input').data('original-value'));
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Terjadi kesalahan saat memperbarui jumlah';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        showToast(errorMessage, 'error');
+
+                        // Reset to original value
+                        form.find('.quantity-input').val(form.find('.quantity-input').data('original-value'));
+                    },
+                    complete: function() {
+                        button.prop('disabled', false).html(originalButtonHtml);
+                    }
+                });
+            });
+
+            // Store original value on focus
+            $(document).on('focus', '.quantity-input', function() {
+                $(this).data('original-value', $(this).val());
             });
 
             // Handle shipping service selection
@@ -468,7 +543,7 @@
                 $('.shipping-cost-value').text('Rp ' + shippingCost.toLocaleString('id-ID'));
 
                 // Update total payment
-                const subTotal = {{ $subTotal }};
+                const subTotal = parseFloat($('.subtotal-summary').text().replace('Rp ', '').replace(/\./g, ''));
                 const total = subTotal + shippingCost;
                 $('.total-payment').text('Rp ' + total.toLocaleString('id-ID'));
 
@@ -477,33 +552,85 @@
                 $('#checkout-form input[name="shipping_service"]').val(serviceName);
                 $('#checkout-form input[name="shipping_etd"]').val(etd);
                 $('#checkout-form input[name="destination_city"]').val(destinationCity);
+                $('#checkout-form input[name="total_payment"]').val(total);
 
-                // Enable checkout button
-                $('#checkout-btn').prop('disabled', false);
+                // Enable checkout button if user is authenticated
+                updateCheckoutButtonState();
 
                 // Show notification
                 showToast(`Layanan ${courierName} - ${serviceName} dipilih`);
             });
+
+            // Handle checkout form submission with AJAX
+            $('#checkout-form').submit(function(e) {
+                e.preventDefault();
+
+                const form = $(this);
+                const button = form.find('#checkout-btn');
+                const originalButtonHtml = button.html();
+
+                // Show loading state
+                button.prop('disabled', true).html(
+                    '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Memproses...'
+                );
+
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'POST',
+                    data: form.serialize(),
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            // Show success message
+                            showToast(response.message);
+
+                            // Redirect after 3 seconds
+                            setTimeout(function() {
+                                window.location.href = response.redirect;
+                            }, response.redirect_time);
+                        } else {
+                            showToast(response.error || 'Terjadi kesalahan saat checkout', 'error');
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Terjadi kesalahan saat memproses checkout';
+                        if (xhr.responseJSON && xhr.responseJSON.error) {
+                            errorMessage = xhr.responseJSON.error;
+                        }
+                        showToast(errorMessage, 'error');
+                    },
+                    complete: function() {
+                        button.prop('disabled', false).html(originalButtonHtml);
+                    }
+                });
+            });
+
+            // Function to update checkout button state
+            function updateCheckoutButtonState() {
+                const hasShipping = $('#checkout-form input[name="shipping_cost"]').val() !== '';
+                const isAuthenticated = {{ auth()->check() ? 'true' : 'false' }};
+                $('#checkout-btn').prop('disabled', !(hasShipping && isAuthenticated));
+            }
 
             // Helper function to show toast notifications
             function showToast(message, type = 'success') {
                 if ($('#toast-container').length === 0) {
                     $('body').append(
                         '<div id="toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index: 11"></div>'
-                        );
+                    );
                 }
 
                 const toastId = 'toast-' + Date.now();
-                const toast = $(`
-            <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'error' ? 'danger' : 'success'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        `);
+                const toast = $(
+                    `<div id="${toastId}" class="toast align-items-center text-white bg-${type === 'error' ? 'danger' : 'success'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>`
+                );
 
                 $('#toast-container').append(toast);
                 toast.toast({

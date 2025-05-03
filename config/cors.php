@@ -2,33 +2,36 @@
 
 return [
 
-    /*
-    |--------------------------------------------------------------------------
-    | Cross-Origin Resource Sharing (CORS) Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Here you may configure your settings for cross-origin resource sharing
-    | or "CORS". This determines what cross-origin operations may execute
-    | in web browsers. You are free to adjust these settings as needed.
-    |
-    | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-    |
-    */
-
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
+    // Hanya izinkan metode yang umum digunakan
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => ['*'],
+    // Izinkan hanya asal tertentu
+    'allowed_origins' => [
+        'http://127.0.0.1',
+    ],
 
-    'allowed_origins_patterns' => [],
+    // Izinkan pola wildcard domain seperti *.rajaongkir.com
+    'allowed_origins_patterns' => [
+        '^https?:\/\/([a-z0-9-]+\.)*rajaongkir\.com$',
+    ],
 
-    'allowed_headers' => ['*'],
+    // Hanya header yang diperlukan
+    'allowed_headers' => [
+        'Content-Type',
+        'X-Requested-With',
+        'Authorization',
+        'Accept',
+        'Origin',
+    ],
 
     'exposed_headers' => [],
 
-    'max_age' => 0,
+    // Cache preflight response selama 1 jam
+    'max_age' => 3600,
 
+    // Tidak mendukung kredensial untuk keamanan lebih ketat
     'supports_credentials' => false,
 
 ];

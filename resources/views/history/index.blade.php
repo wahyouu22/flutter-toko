@@ -36,12 +36,18 @@
                             <td>{!! $order->status_badge !!}</td>
                             <td>
                                 <div class="d-flex gap-2">
-                                    <a href="{{ route('history.show', $order->id) }}" class="btn btn-sm btn-outline-primary">
+                                    <a href="{{
+                                        in_array($order->status, ['processing', 'shipped'])
+                                        ? route('history.edit', $order->id)
+                                        : route('history.show', $order->id)
+                                    }}" class="btn btn-sm btn-outline-primary">
                                         <i class="fas fa-eye me-1"></i> Detail
                                     </a>
+
                                     <a href="{{ route('history.invoice', $order->id) }}" class="btn btn-sm btn-outline-info" target="_blank">
                                         <i class="fas fa-file-invoice me-1"></i> Invoice
                                     </a>
+
                                     @if($order->status === 'pending')
                                         <form action="{{ route('history.pay', $order->id) }}" method="POST">
                                             @csrf

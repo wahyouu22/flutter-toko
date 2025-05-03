@@ -5,96 +5,163 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Auth;
 
 class HistoryController extends Controller
 {
-    // Menampilkan daftar history pesanan
     public function index()
     {
-        $orders = Order::with(['items'])
-            ->where('user_id', Auth::id())
-            ->latest()
+        $orders = Order::where('user_id', auth()->id())
+            ->orderBy('created_at', 'desc')
             ->paginate(10);
+
+        $orders->getCollection()->transform(function ($order) {
+            $order->status_badge = $this->getStatusBadge($order->status);
+            return $order;
+        });
 
         return view('history.index', compact('orders'));
     }
 
-    // Menampilkan detail pesanan
-    public function show($id)
+    public function show(Order $order)
     {
-        $order = Order::with(['items', 'items.product'])
-            ->where('user_id', Auth::id())
-            ->findOrFail($id);
+        if ($order->user_id !== auth()->id()) {
+            abort(403);
+        }
 
-        return view('history.edit', compact('order'));
+        $order->status_badge = $this->getStatusBadge($order->status);
+        $orderItems = OrderItem::where('order_id', $order->id)->get();
+
+        // Add public URL for foto_resi
+        $order->foto_resi_url = $order->foto_resi
+            ? asset('storage/' . $order->foto_resi)
+            : null;
+
+        return view('history.show', compact('order', 'orderItems'));
     }
 
-    // Update pesanan (alamat, kode pos, resi)
-    public function update(Request $request, $id)
+    public function edit(Order $order)
     {
-        $order = Order::where('user_id', Auth::id())->findOrFail($id);
+        if ($order->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if (!in_array($order->status, ['processing', 'shipped'])) {
+            return redirect()->route('history.show', $order->id)
+                ->with('error', 'Pesanan tidak dapat diedit pada status ini');
+        }
+
+        $order->status_badge = $this->getStatusBadge($order->status);
+        $orderItems = OrderItem::where('order_id', $order->id)->get();
+
+        // Add foto_resi URL and debug info
+        $order->foto_resi_url = $order->foto_resi
+            ? asset('storage/' . $order->foto_resi)
+            : null;
+
+        return view('history.edit', compact('order', 'orderItems'));
+    }
+
+    public function update(Order $order, Request $request)
+    {
+        if ($order->user_id !== auth()->id()) {
+            abort(403);
+        }
 
         $validated = $request->validate([
-            'alamat' => 'required|string|max:255',
-            'pos' => 'required|string|max:10',
-            'tracking_number' => 'nullable|string|max:100',
-            'hp' => 'nullable|string|max:20',
+            'tracking_number' => 'required|string|max:50',
+            'receipt_photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'foto_resi' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        // Handle foto_resi upload
+        if ($request->hasFile('foto_resi')) {
+            // Delete old file if exists
+            if ($order->foto_resi) {
+                Storage::disk('public')->delete($order->foto_resi);
+            }
+
+            // Store new file in storage/foto_resi directory
+            $path = $request->file('foto_resi')->store('foto_resi', 'public');
+            $validated['foto_resi'] = $path;
+        }
+
+        // Handle receipt_photo (separate directory)
+        if ($request->hasFile('receipt_photo')) {
+            if ($order->receipt_photo) {
+                Storage::delete('public/receipts/' . $order->receipt_photo);
+            }
+
+            $filename = 'receipt_' . $order->id . '_' . time() . '.' . $request->file('receipt_photo')->getClientOriginalExtension();
+            $path = $request->file('receipt_photo')->storeAs('public/receipts', $filename);
+            $validated['receipt_photo'] = $filename;
+
+            if ($order->status === 'processing') {
+                $validated['status'] = 'shipped';
+            }
+        }
 
         $order->update($validated);
 
-        return redirect()->route('history.show', $order->id)
-            ->with('success', 'Data pesanan berhasil diperbarui.');
+        return redirect()->route('history.edit', $order->id)
+            ->with('success', 'Data pesanan berhasil diperbarui');
     }
 
-    // Generate invoice PDF
-    public function invoice($id)
+    public function invoice(Order $order)
     {
-        $order = Order::with(['items', 'items.product'])
-            ->where('user_id', Auth::id())
-            ->findOrFail($id);
+        if ($order->user_id !== auth()->id()) {
+            abort(403);
+        }
 
-        return view('history.invoice', compact('order'));
+        $orderItems = OrderItem::where('order_id', $order->id)->get();
+        return view('history.invoice', compact('order', 'orderItems'));
     }
 
-    // Download invoice PDF
-    public function downloadInvoice($id)
+    public function invoicePdf(Order $order)
     {
-        $order = Order::with(['items', 'items.product'])
-            ->where('user_id', Auth::id())
-            ->findOrFail($id);
+        if ($order->user_id !== auth()->id()) {
+            abort(403);
+        }
 
-        $pdf = Pdf::loadView('history.invoice-pdf', compact('order'));
+        $orderItems = OrderItem::where('order_id', $order->id)->get();
 
-        return $pdf->download('invoice-' . $order->id . '.pdf');
+        $invoiceData = [
+            'invoice_number' => 'INV-' . $order->id . '-' . now()->format('Ymd'),
+            'invoice_date' => $order->created_at->format('d F Y'),
+            'due_date' => $order->created_at->addDays(7)->format('d F Y'),
+            'order' => $order,
+            'orderItems' => $orderItems,
+            'customer' => [
+                'name' => $order->customer_name,
+                'email' => $order->customer_email,
+                'phone' => $order->hp,
+                'address' => $order->alamat,
+                'postal_code' => $order->pos,
+                'city' => $order->destination_city,
+            ],
+            'company' => [
+                'name' => config('app.name'),
+                'address' => 'Jl. Contoh No. 123, Kota Contoh',
+                'phone' => '+62 123 4567 890',
+                'email' => 'info@example.com',
+            ]
+        ];
+
+        $pdf = Pdf::loadView('history.invoice-pdf', $invoiceData);
+        return $pdf->stream("invoice-{$invoiceData['invoice_number']}.pdf");
     }
 
-    // Proses pembayaran
-    public function processPayment($id)
+    private function getStatusBadge($status)
     {
-        $order = Order::where('user_id', Auth::id())
-            ->where('status', 'pending')
-            ->findOrFail($id);
+        $badges = [
+            'pending' => '<span class="badge bg-warning text-dark">Menunggu Pembayaran</span>',
+            'processing' => '<span class="badge bg-info text-white">Diproses</span>',
+            'shipped' => '<span class="badge bg-primary text-white">Dikirim</span>',
+            'completed' => '<span class="badge bg-success text-white">Selesai</span>',
+            'cancelled' => '<span class="badge bg-danger text-white">Dibatalkan</span>',
+        ];
 
-        // Logika pembayaran disini
-        // Misalnya redirect ke gateway pembayaran
-
-        return redirect()->back()->with('info', 'Anda akan diarahkan ke halaman pembayaran.');
-    }
-
-    // Update status pesanan (untuk admin)
-    public function updateStatus(Request $request, $id)
-    {
-        $order = Order::findOrFail($id);
-
-        $request->validate([
-            'status' => 'required|in:pending,processing,completed,cancelled',
-        ]);
-
-        $order->update(['status' => $request->status]);
-
-        return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui.');
+        return $badges[$status] ?? '<span class="badge bg-secondary text-white">' . ucfirst($status) . '</span>';
     }
 }

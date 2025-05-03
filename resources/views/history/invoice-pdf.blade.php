@@ -1,195 +1,202 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Invoice #{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</title>
-    <style>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <title>Invoice Pesanan #{{$order->id}}</title>
+    <style type="text/css">
         body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
+            font-family: "Helvetica", Arial, sans-serif;
+            font-size: 9pt;
+            background: #fff;
+            margin: 10px;
         }
-        .container {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
+
         .header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-        }
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .invoice-info {
-            text-align: right;
-        }
-        .section {
-            margin-bottom: 30px;
-        }
-        .section-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #eee;
-        }
-        .row {
-            display: flex;
-            margin-bottom: 15px;
-        }
-        .col-md-6 {
-            width: 50%;
-        }
-        table {
             width: 100%;
-            border-collapse: collapse;
             margin-bottom: 20px;
         }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+
+        .logo {
+            width: 40px;
+            max-height: 60px;
+        }
+
+        .company-address {
+            font-size: 8pt;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+
+        .invoice-title {
+            font-size: 14pt;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        table.invoice {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8pt;
+            margin-bottom: 15px;
+        }
+
+        table.invoice th {
+            padding: 8px 10px;
+            background-color: #E6EE9C;
+            border: 1px solid #81C784;
             text-align: left;
+            font-weight: bold;
+            text-transform: uppercase;
         }
-        th {
-            background-color: #f5f5f5;
+
+        table.invoice td {
+            padding: 8px 10px;
+            border: 1px solid #81C784;
         }
-        .text-end {
+
+        .text-right {
             text-align: right;
         }
-        .footer {
-            margin-top: 50px;
-            padding-top: 20px;
-            border-top: 1px solid #eee;
+
+        .text-center {
             text-align: center;
-            font-size: 12px;
         }
-        .badge {
-            display: inline-block;
-            padding: 3px 7px;
-            font-size: 12px;
+
+        .customer-info {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        .customer-info th {
+            background-color: #E6EE9C;
+            padding: 8px;
+            text-align: left;
             font-weight: bold;
-            line-height: 1;
-            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .customer-info td {
+            padding: 8px;
+            vertical-align: top;
+        }
+
+        .customer-detail {
+            margin-bottom: 5px;
+        }
+
+        .customer-label {
+            display: inline-block;
+            width: 80px;
+            font-weight: bold;
+        }
+
+        .summary {
+            margin-top: 20px;
+            font-size: 9pt;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #81C784;
+            font-size: 8pt;
             text-align: center;
-            white-space: nowrap;
-            vertical-align: middle;
-            border-radius: 10px;
-        }
-        .badge-success {
-            background-color: #28a745;
-        }
-        .badge-warning {
-            background-color: #ffc107;
-            color: #212529;
-        }
-        .badge-danger {
-            background-color: #dc3545;
-        }
-        .badge-info {
-            background-color: #17a2b8;
+            color: #666;
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">{{ config('app.name') }}</div>
-            <div class="invoice-info">
-                <h2>INVOICE</h2>
-                <p><strong>No. Invoice:</strong> INV-{{ str_pad($order->id, 6, '0', STR_PAD_LEFT) }}</p>
-                <p><strong>Tanggal:</strong> {{ $order->created_at->format('d M Y') }}</p>
-                <p><strong>Status:</strong>
-                    @if($order->status === 'completed' || $order->status === 'sukses')
-                        <span class="badge badge-success">{{ ucfirst($order->status) }}</span>
-                    @elseif($order->status === 'pending')
-                        <span class="badge badge-warning">{{ ucfirst($order->status) }}</span>
-                    @elseif($order->status === 'cancelled')
-                        <span class="badge badge-danger">{{ ucfirst($order->status) }}</span>
-                    @else
-                        <span class="badge badge-info">{{ ucfirst($order->status) }}</span>
+    <table class="header">
+        <tr>
+            <td width="50%" valign="top">
+                @if(file_exists(public_path('image/logo.png')))
+                    <img src="{{ public_path('image/logo.png') }}" class="logo" alt="Logo Perusahaan"/>
+                @else
+                    <h2>{{ config('app.name') }}</h2>
+                @endif
+                <div class="company-address">
+                    RT.5/RW.6, Lubang Buaya, Kec. Cipayung<br>
+                    Kota Jakarta Timur, Daerah Khusus Ibukota Jakarta, Kode Pos 13810<br>
+                    Telp: (021) 12345678
+                </div>
+            </td>
+            <td width="50%" valign="top" align="right">
+                <p>
+                    <span style="font-size: 10pt">No. Pesanan: <b>#{{$order->id}}</b></span><br/>
+                    Tanggal: <b>{{$order->created_at->format('d-m-Y H:i')}}</b><br/>
+                    Status: <b>{{ ucfirst($order->status) }}</b><br/>
+                    @if($order->tracking_number)
+                        No. Resi: <b>{{$order->tracking_number}}</b>
                     @endif
                 </p>
-            </div>
-        </div>
+            </td>
+        </tr>
+    </table>
 
-        <div class="section">
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="section-title">Informasi Toko</div>
-                    <p><strong>Nama Toko:</strong> {{ config('app.name') }}</p>
-                    <p><strong>Alamat:</strong> Jl. Contoh No. 123, Kota Contoh</p>
-                    <p><strong>Telepon:</strong> (021) 12345678</p>
-                    <p><strong>Email:</strong> info@toko.example.com</p>
-                </div>
-                <div class="col-md-6">
-                    <div class="section-title">Informasi Pelanggan</div>
-                    <p><strong>Nama:</strong> {{ $order->customer_name }}</p>
-                    <p><strong>Email:</strong> {{ $order->customer_email }}</p>
-                    <p><strong>Telepon:</strong> {{ $order->hp ?? '-' }}</p>
-                    <p><strong>Alamat:</strong> {{ $order->alamat }}</p>
-                    <p><strong>Kode Pos:</strong> {{ $order->pos }}</p>
-                </div>
-            </div>
-        </div>
+    <div class="invoice-title">
+        INVOICE PEMBAYARAN
+    </div>
 
-        <div class="section">
-            <div class="section-title">Detail Pesanan</div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Produk</th>
-                        <th>Harga Satuan</th>
-                        <th>Jumlah</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($order->items as $index => $item)
-                        <tr>
-                            <td>{{ $index + 1 }}</td>
-                            <td>
-                                {{ $item->product_name }}
-                                <small style="color: #666;">ID: {{ $item->product_id }}</small>
-                            </td>
-                            <td>Rp {{ number_format($item->price, 0, ',', '.') }}</td>
-                            <td>{{ $item->quantity }}</td>
-                            <td>Rp {{ number_format($item->total_price, 0, ',', '.') }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
-                        <td>Rp {{ number_format($order->total_price, 0, ',', '.') }}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="4" class="text-end"><strong>Ongkos Kirim:</strong></td>
-                        <td>Rp {{ number_format($order->shipping_cost, 0, ',', '.') }}</td>
-                    </tr>
-                    <tr>
-                        <td colspan="4" class="text-end"><strong>Total Pembayaran:</strong></td>
-                        <td>Rp {{ number_format($order->final_price, 0, ',', '.') }}</td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
+    <table class="invoice">
+        <thead>
+            <tr>
+                <th>Produk</th>
+                <th width="10%">Qty</th>
+                <th width="15%">Harga Satuan</th>
+                <th width="15%">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($orderItems as $item)
+            <tr>
+                <td>{{ $item->product_name }}</td>
+                <td class="text-center">{{ $item->quantity }}</td>
+                <td class="text-right">Rp{{ number_format($item->price, 0, ',', '.') }}</td>
+                <td class="text-right">Rp{{ number_format($item->total_price, 0, ',', '.') }}</td>
+            </tr>
+            @endforeach
+            <tr>
+                <td colspan="3" class="text-right" style="font-weight: bold;">Subtotal Produk</td>
+                <td class="text-right" style="font-weight: bold;">Rp{{ number_format($order->total_price, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td colspan="3" class="text-right">Biaya Pengiriman</td>
+                <td class="text-right">Rp{{ number_format($order->shipping_cost, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <td colspan="3" class="text-right" style="font-weight: bold;">TOTAL PEMBAYARAN</td>
+                <td class="text-right" style="font-weight: bold;">Rp{{ number_format($order->final_price, 0, ',', '.') }}</td>
+            </tr>
+        </tbody>
+    </table>
 
-        <div class="section">
-            <div class="section-title">Informasi Pengiriman</div>
-            <p><strong>Kurir:</strong> {{ $order->shipping_service }}</p>
-            <p><strong>Estimasi:</strong> {{ $order->shipping_etd }} hari</p>
-            <p><strong>Resi:</strong> {{ $order->tracking_number ?? 'Belum tersedia' }}</p>
-        </div>
+    <table class="customer-info">
+        <tr>
+            <th width="50%">Informasi Pelanggan</th>
+            <th width="50%">Informasi Pengiriman</th>
+        </tr>
+        <tr>
+            <td>
+                <div class="customer-detail"><span class="customer-label">Nama</span>: {{ $order->customer_name }}</div>
+                <div class="customer-detail"><span class="customer-label">Email</span>: {{ $order->customer_email }}</div>
+                <div class="customer-detail"><span class="customer-label">Telepon</span>: {{ $order->hp ?: '-' }}</div>
+                <div class="customer-detail"><span class="customer-label">Alamat</span>: {{ $order->alamat ?: '-' }}</div>
+                <div class="customer-detail"><span class="customer-label">Kota</span>: {{ $order->destination_city ?: '-' }}</div>
+                <div class="customer-detail"><span class="customer-label">Kode Pos</span>: {{ $order->pos ?: '-' }}</div>
+            </td>
+            <td>
+                <div class="customer-detail"><span class="customer-label">Kurir</span>: {{ $order->shipping_service }}</div>
+                <div class="customer-detail"><span class="customer-label">Estimasi</span>: {{ $order->shipping_etd }}</div>
+            </td>
+        </tr>
+    </table>
 
-        <div class="footer">
-            <p>Terima kasih telah berbelanja di toko kami</p>
-            <p>Invoice ini sah dan diproses oleh sistem</p>
-        </div>
+    <div class="footer">
+        <p>Terima kasih telah berbelanja di {{ config('app.name') }}</p>
+        <p>Dicetak pada: {{ now()->format('d-m-Y H:i') }}</p>
     </div>
 </body>
 </html>

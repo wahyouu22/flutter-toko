@@ -23,7 +23,8 @@ class Order extends Model
         'tracking_number',
         'hp',
         'alamat',
-        'pos'
+        'pos',
+        'foto_resi' // foto resi lupa, mau tambhakan kemarin.
     ];
 
     public function user()
@@ -36,13 +37,11 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    // Accessor untuk format tanggal
     public function getFormattedDateAttribute()
     {
         return $this->created_at->format('d M Y H:i');
     }
 
-    // Accessor untuk status dengan badge
     public function getStatusBadgeAttribute()
     {
         $status = strtolower($this->status);
