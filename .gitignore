@@ -11,10 +11,14 @@ node_modules/
 /storage/**/*.log
 /public/**/*.log
 
+# public
 !public/
 !public/**/*
 
 public/**/*.log
-
 !public/storage/
 !public/storage/**/*
+
+#storage
+!storage/
+!storage/**/*
