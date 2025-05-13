@@ -136,9 +136,11 @@ Route::prefix('history')->middleware(['auth'])->group(function () {
     Route::get('/{order}', [HistoryController::class, 'show'])->name('history.show');
     Route::get('/{order}/edit', [HistoryController::class, 'edit'])->name('history.edit');
     Route::put('/{order}', [HistoryController::class, 'update'])->name('history.update');
-    Route::post('/{order}/pay', [HistoryController::class, 'pay'])->name('history.pay');
     Route::get('/{order}/invoice', [HistoryController::class, 'invoice'])->name('history.invoice');
     Route::get('/{order}/invoice-pdf', [HistoryController::class, 'invoicePdf'])->name('history.invoice.pdf');
+    Route::get('/history/{id}/pay', [HistoryController::class, 'pay']);
+    Route::post('/history/pay/{order}', [HistoryController::class, 'pay'])->name('history.pay');
+
 });
 
 // Rute untuk checkout dan order

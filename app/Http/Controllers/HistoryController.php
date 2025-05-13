@@ -7,6 +7,8 @@ use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Midtrans\Snap;
+use Midtrans\Config;
 
 class HistoryController extends Controller
 {
@@ -164,4 +166,40 @@ class HistoryController extends Controller
 
         return $badges[$status] ?? '<span class="badge bg-secondary text-white">' . ucfirst($status) . '</span>';
     }
+
+    public function pay(Order $order)
+{
+    if ($order->user_id !== auth()->id()) {
+        abort(403);
+    }
+
+    // Konfigurasi Midtrans
+    Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+    Config::$isProduction = false; // true untuk production
+    Config::$isSanitized = true;
+    Config::$is3ds = true;
+
+    $params = [
+        'transaction_details' => [
+            'order_id' => 'ORDER-' . $order->id . '-' . time(),
+            'gross_amount' => $order->final_price,
+        ],
+        'customer_details' => [
+            'first_name' => $order->customer_name,
+            'last_name' => '',
+            'email' => $order->customer_email,
+            'phone' => $order->hp,
+        ],
+    ];
+
+    $snapToken = Snap::getSnapToken($params);
+
+    return view('history.index', [
+        'orders' => Order::where('user_id', auth()->id())
+            ->orderBy('created_at', 'desc')
+            ->paginate(10),
+        'snapToken' => $snapToken,
+        'currentOrderId' => $order->id
+    ]);
+}
 }
