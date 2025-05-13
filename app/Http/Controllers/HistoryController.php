@@ -167,39 +167,31 @@ class HistoryController extends Controller
         return $badges[$status] ?? '<span class="badge bg-secondary text-white">' . ucfirst($status) . '</span>';
     }
 
-    public function pay(Order $order)
+    public function pay($id)
 {
-    if ($order->user_id !== auth()->id()) {
-        abort(403);
-    }
-
     // Konfigurasi Midtrans
     Config::$serverKey = env('MIDTRANS_SERVER_KEY');
     Config::$isProduction = false; // true untuk production
     Config::$isSanitized = true;
     Config::$is3ds = true;
 
+    // Dummy transaksi
     $params = [
         'transaction_details' => [
-            'order_id' => 'ORDER-' . $order->id . '-' . time(),
-            'gross_amount' => $order->final_price,
+            'order_id' => 'ORDER-' . $id . '-' . time(),
+            'gross_amount' => 100000,
         ],
         'customer_details' => [
-            'first_name' => $order->customer_name,
-            'last_name' => '',
-            'email' => $order->customer_email,
-            'phone' => $order->hp,
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'email' => 'johndoe@example.com',
+            'phone' => '08123456789',
         ],
     ];
 
     $snapToken = Snap::getSnapToken($params);
 
-    return view('history.index', [
-        'orders' => Order::where('user_id', auth()->id())
-            ->orderBy('created_at', 'desc')
-            ->paginate(10),
-        'snapToken' => $snapToken,
-        'currentOrderId' => $order->id
-    ]);
+    return view('payment.view', compact('snapToken'));
 }
+
 }

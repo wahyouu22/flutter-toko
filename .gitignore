@@ -5,7 +5,6 @@
 vendor/
 node_modules/
 
-.env
 
 *.log
 /storage/**/*.log

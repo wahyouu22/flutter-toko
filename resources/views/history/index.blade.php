@@ -49,11 +49,12 @@
                                     </a>
 
                                     @if($order->status === 'pending')
-                                        <button class="btn btn-sm btn-success pay-button" 
-                                            data-order-id="{{ $order->id }}"
-                                            data-snap-token="{{ isset($snapToken) && $currentOrderId == $order->id ? $snapToken : '' }}">
-                                            <i class="fas fa-credit-card me-1"></i> Bayar
-                                        </button>
+                                        <form action="{{ route('history.pay', $order->id) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="fas fa-credit-card me-1"></i> Bayar
+                                            </button>
+                                        </form>
                                     @endif
                                 </div>
                             </td>
@@ -68,85 +69,4 @@
         </div>
     @endif
 </div>
-
-@if(isset($snapToken))
-<!-- Midtrans Payment Modal -->
-<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="paymentModalLabel">Pembayaran</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="payment-container">
-                    <!-- Midtrans payment form will be loaded here -->
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
-
-@endsection
-
-@section('scripts')
-@parent
-<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="{{ env('MIDTRANS_CLIENT_KEY') }}"></script>
-<script>
-    $(document).ready(function() {
-        $('.pay-button').click(function(e) {
-            e.preventDefault();
-            const orderId = $(this).data('order-id');
-            const snapToken = $(this).data('snap-token');
-            
-            if (snapToken) {
-                // Jika sudah ada token, langsung tampilkan popup pembayaran
-                initiatePayment(snapToken);
-            } else {
-                // Jika belum ada token, ambil dulu via AJAX
-                fetchSnapToken(orderId);
-            }
-        });
-
-        function fetchSnapToken(orderId) {
-            $.ajax({
-                url: "{{ route('history.pay', '') }}/" + orderId,
-                method: 'POST',
-                data: {
-                    _token: "{{ csrf_token() }}"
-                },
-                success: function(response) {
-                    if (response.snapToken) {
-                        initiatePayment(response.snapToken);
-                    } else {
-                        alert('Gagal mendapatkan token pembayaran');
-                    }
-                },
-                error: function() {
-                    alert('Terjadi kesalahan saat memproses pembayaran');
-                }
-            });
-        }
-
-        function initiatePayment(snapToken) {
-            snap.pay(snapToken, {
-                onSuccess: function(result) {
-                    alert('Pembayaran berhasil!');
-                    window.location.reload();
-                },
-                onPending: function(result) {
-                    alert('Menunggu pembayaran Anda!');
-                    window.location.reload();
-                },
-                onError: function(result) {
-                    alert('Pembayaran gagal! Silakan coba lagi.');
-                },
-                onClose: function() {
-                    console.log('Anda menutup popup pembayaran');
-                }
-            });
-        }
-    });
-</script>
 @endsection
