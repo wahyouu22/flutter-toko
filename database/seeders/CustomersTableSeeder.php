@@ -46,7 +46,7 @@ class CustomersTableSeeder extends Seeder
                 'google_token' => 'xxxx',
                 'name' => 'rhy0z Dz',
                 'email' => 'rhyfk0z@gmail.com',
-                'password' => '$2y$10$N8bHWKUJwp2ksOEY5C472.uo564VL4kW4Ew7xR17hxo6B866.5Ou.',
+                'password' => '$lorepimsum.',
                 'hp' => null,
                 'alamat' => null,
                 'pos' => null,
